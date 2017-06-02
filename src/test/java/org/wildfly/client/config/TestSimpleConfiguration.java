@@ -82,6 +82,22 @@ public final class TestSimpleConfiguration {
         }
     }
 
+    @Test
+    public void testSimpleGetInstance() throws Exception {
+        String oldConfig = System.getProperty("wildfly.config.url");
+        try {
+            System.setProperty("wildfly.config.url", "src/test/resources/first-element-config.xml");
+            ClientConfiguration configuration = ClientConfiguration.getInstance();
+            try (ConfigurationXMLStreamReader reader = configuration.readConfiguration(Collections.singleton("urn:config-urn"))) {
+                validateContent(reader);
+            }
+        } finally {
+            if (oldConfig != null) {
+                System.setProperty("wildfly.config.url", oldConfig);
+            }
+        }
+    }
+
     public void validateContent(final ConfigurationXMLStreamReader reader) throws ConfigXMLParseException {
         assertNotNull(reader);
         assertTrue(reader.hasNext());

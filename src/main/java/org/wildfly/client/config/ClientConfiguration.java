@@ -23,7 +23,6 @@ import static javax.xml.stream.XMLStreamConstants.*;
 import static org.wildfly.client.config.ConfigurationXMLStreamReader.eventToString;
 import static org.wildfly.client.config._private.ConfigMessages.msg;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -31,6 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Set;
@@ -214,8 +214,11 @@ public class ClientConfiguration {
             try {
                 uri = new URI(wildFlyConfig);
                 if (! uri.isAbsolute()) {
-                    String userDir = System.getProperty("user.dir").replace(File.separatorChar, '/');
-                    uri = new URI("file", "", userDir.endsWith("/") ? userDir : userDir + "/", null).resolve(uri);
+                    if (uri.getPath().startsWith("/")) {
+                        uri = Paths.get(uri.getPath()).toUri();
+                    } else {
+                        uri = Paths.get(System.getProperty("user.dir"), uri.getPath()).toUri();
+                    }
                 }
             } catch (URISyntaxException e) {
                 // no config file there
@@ -242,7 +245,7 @@ public class ClientConfiguration {
                 return null;
             }
         } try {
-            return new ClientConfiguration(XMLInputFactory.newFactory(), resource.toURI(), resource::openStream);
+            return new ClientConfiguration(createXmlInputFactory(), resource.toURI(), resource::openStream);
         } catch (URISyntaxException e) {
             return null;
         }
